@@ -29,6 +29,7 @@ async function run() {
         await client.connect();
 
         const serviceCollection = client.db('carDoctor').collection('services');
+        const bookingCollection = client.db('carDoctor').collection('bookings');
 
         app.get('/services', async (req, res) => {
             const cursor = serviceCollection.find();    //for find all
@@ -48,6 +49,14 @@ async function run() {
             const result = await serviceCollection.findOne(query,options);
             res.send(result);
         })
+
+        // Bookings
+        app.post("/bookings",async(req,res)=>{
+            const bookings = req.body;
+            console.log(bookings);
+            const result = await bookingCollection.insertOne(bookings);
+            res.send(result);
+        });
 
 
         // Send a ping to confirm a successful connection
