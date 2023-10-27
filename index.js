@@ -45,40 +45,49 @@ async function run() {
             };
             const options = {
                 // Include only the `title` and `imdb` fields in the returned document
-                projection: { title: 1, price: 1, service_id:1, img:1 },     // jei jei property gulo chai tar man 1 dite hobe na chaile 0 dite hobe
+                projection: { title: 1, price: 1, service_id: 1, img: 1 },     // jei jei property gulo chai tar man 1 dite hobe na chaile 0 dite hobe
             };
-            const result = await serviceCollection.findOne(query,options);
+            const result = await serviceCollection.findOne(query, options);
             res.send(result);
         })
 
         // Bookings
 
-        app.get('/bookings',async(req,res)=>{
+        app.get('/bookings', async (req, res) => {
             // console.log(req.query.email);   //user er email ta pabe
             let query = {};
-            if(req.query?.email){
-                query = {email: req.query.email}    // database er email abong client er email match korabe 
+            if (req.query?.email) {
+                query = { email: req.query.email }    // database er email abong client er email match korabe 
             }
             const result = await bookingCollection.find(query).toArray();
             // console.log(result);
             res.send(result);
         })
 
-        app.post("/bookings",async(req,res)=>{
+        app.post("/bookings", async (req, res) => {
             const bookings = req.body;
             console.log(bookings);
             const result = await bookingCollection.insertOne(bookings);
             res.send(result);
         });
 
-        app.put('/bookings/:id',async(req,res)=>{
+        app.patch('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
             const updatedBookings = req.body;
-            
+            const updateDoc = {
+                $set: {
+                    status: updatedBookings.status
+                },
+            };
+            // console.log(updatedBookings);
+            const result = await bookingCollection.updateOne(filter, updateDoc);
+            res.send(result);
         })
 
-        app.delete('/bookings/:id',async(req,res)=>{
+        app.delete('/bookings/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const result = await bookingCollection.deleteOne(query);
             res.send(result);
         })
