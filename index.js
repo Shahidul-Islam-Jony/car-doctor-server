@@ -9,11 +9,39 @@ const port = process.env.PORT || 5000;
 
 //middleware
 app.use(cors({
-    origin:['http://localhost:5173'],
-    credentials:true
+    origin: ['http://localhost:5173'],
+    credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+
+// own created middlewares
+const logger = async (req, res, next) => {
+    console.log('called', req.host, req.originalUrl);
+    next();
+}
+
+const verifyToken = async(req,res,next)=>{
+    const token = req.cookies?.token;
+    console.log('value of token in middleware',token);
+    if(!token){
+        // return res.send({message: 'Not Authorized'})
+        return res.status(401).send({message: 'Not Authorized'})
+    }
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+        // error
+        if(err){
+            console.log(err);
+            return res.status(401).send({message:'Unauthorized'})
+        }
+
+        // if token is valid then it would be decoded
+        console.log('value in the token',decoded);
+        req.user = decoded;
+        next();
+    })
+}
 
 
 
@@ -37,23 +65,23 @@ async function run() {
         const bookingCollection = client.db('carDoctor').collection('bookings');
 
         // auth related api
-        app.post('/jwt',async(req,res)=>{
+        app.post('/jwt',logger, async (req, res) => {
             const user = req.body;
             console.log(user);
-            const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'})
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
 
             res
-            .cookie('token',token,{
-                httpOnly:true,
-                secure:false,
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: false,
 
-            })
-            .send({success: true});
+                })
+                .send({ success: true });
         })
 
 
         // Services related api
-        app.get('/services', async (req, res) => {
+        app.get('/services',logger, async (req, res) => {
             const cursor = serviceCollection.find();    //for find all
             const result = await cursor.toArray();
             // const result = await serviceCollection.find().toArray(); // uporer dui line ekline ao kora jai
@@ -75,9 +103,10 @@ async function run() {
 
         // Bookings
 
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings',verifyToken, async (req, res) => {
             // console.log(req.query.email);   //user er email ta pabe
-            console.log('Token',req.cookies.token);
+            // console.log('Token', req.cookies.token);
+            console.log('user in the valid token',req.user);
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query.email }    // database er email abong client er email match korabe 
