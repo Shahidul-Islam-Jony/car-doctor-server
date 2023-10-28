@@ -107,6 +107,9 @@ async function run() {
             // console.log(req.query.email);   //user er email ta pabe
             // console.log('Token', req.cookies.token);
             console.log('user in the valid token',req.user);
+            if(req.query.email !== req.user.email){
+                return res.status(403).send({message:'Forbidden access'});
+            }
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query.email }    // database er email abong client er email match korabe 
